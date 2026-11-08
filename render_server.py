@@ -1,8 +1,11 @@
 import asyncio
+import hmac
 import json
 import os
 
 from aiohttp import WSMsgType, web
+
+TOKEN = os.environ.get("RELAY_TOKEN", "").strip()
 
 
 async def index(request):
@@ -26,6 +29,8 @@ async def pump_tcp(ws, reader):
 
 
 async def tunnel(request):
+    if TOKEN and not hmac.compare_digest(request.query.get("token", ""), TOKEN):
+        return web.Response(status=403, text="forbidden")
     ws = web.WebSocketResponse(heartbeat=25, max_msg_size=0)
     await ws.prepare(request)
     writer = None
